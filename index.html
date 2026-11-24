@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Flappy Owl</title>
+<style>
+:root{--card:#fff;--text:#2b2b2b;--muted:#6b7280;--line:#e2e5e9;color-scheme:light;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--card:#1f2a33;--text:#f1f5f9;--muted:#9aa7b4;--line:#37464f;color-scheme:dark}}
+:root[data-theme="dark"]{--card:#1f2a33;--text:#f1f5f9;--muted:#9aa7b4;--line:#37464f;color-scheme:dark}
+*{box-sizing:border-box}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px);background:linear-gradient(#4fc3f7 calc(100% - env(safe-area-inset-bottom,0px)),#ded895 0)}
+html,body{margin:0;overflow:hidden;overscroll-behavior:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;font-family:ui-rounded,"SF Pro Rounded",system-ui,-apple-system,"Segoe UI",sans-serif}
+body{height:100%;background:#4fc3f7;color:var(--text)}
+#stage{position:relative;height:100%;max-width:480px;margin:0 auto;touch-action:none}
+canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+#score{position:absolute;top:14px;left:0;right:0;text-align:center;font-size:58px;font-weight:900;color:#fff;text-shadow:0 4px 0 rgba(0,0,0,.22);pointer-events:none}
+#atr{position:absolute;top:18px;left:14px;padding:6px 12px;border-radius:14px;background:rgba(0,0,0,.22);color:#fff;font-size:17px;font-weight:800;text-shadow:0 2px 0 rgba(0,0,0,.25);pointer-events:none}
+#imm{position:absolute;top:58px;left:14px;padding:5px 12px;border-radius:14px;background:rgba(255,200,0,.9);color:#4a3600;font-size:15px;font-weight:800;pointer-events:none}
+#tip{position:absolute;left:0;right:0;top:15%;text-align:center;color:#fff;font-weight:800;font-size:22px;text-shadow:0 3px 0 rgba(0,0,0,.22);pointer-events:none}
+#tip .ttl{font-size:46px;font-weight:900;margin-bottom:6px}
+.ov{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(20,30,60,.38);touch-action:manipulation}
+.ov.top{align-items:flex-start;padding-top:3%;overflow-y:auto}
+.hidden{display:none!important}
+.card{width:100%;max-width:360px;background:var(--card);color:var(--text);border-radius:24px;padding:22px;text-align:center;box-shadow:0 8px 0 rgba(0,0,0,.18)}
+h1{margin:0 0 6px;font-size:32px;font-weight:900}
+.sc{margin:0 0 18px;color:var(--muted);font-size:18px;font-weight:700}
+.sc b{color:var(--text)}
+.cat{font-size:15px;font-weight:700;color:var(--muted);margin-bottom:10px}
+.q{font-size:23px;font-weight:800;line-height:1.35;margin:0 0 16px}
+button{width:100%;font:inherit;font-weight:900;font-size:17px;letter-spacing:.5px;text-transform:uppercase;color:#fff;background:#58cc02;border:0;border-bottom:5px solid #46a302;border-radius:16px;padding:14px 12px;cursor:pointer;touch-action:manipulation}
+button:active{transform:translateY(3px);border-bottom-width:2px}
+input{width:100%;font:inherit;font-size:18px;font-weight:700;padding:13px 14px;margin-bottom:10px;text-align:center;border:2px solid var(--line);border-radius:14px;background:transparent;color:var(--text);outline:none;-webkit-user-select:text;user-select:text}
+input:focus{border-color:#1cb0f6}
+.fb{min-height:24px;margin-bottom:10px;font-weight:800}
+.fb.bad{color:#ea2b2b}.fb.ok{color:#46a302}
+.q{white-space:pre-line;font-size:20px;line-height:1.4}
+.cat:empty{display:none}
+.stack{display:grid;gap:12px}
+.b2{background:#1cb0f6;border-bottom-color:#1899d6}
+.b3{background:transparent;color:var(--text);border:2px solid var(--line);border-bottom-width:4px}
+.b3.sel{border-color:#58cc02}
+.pk{margin:-2px 0 18px;color:var(--muted);font-weight:700;font-size:16px}
+.pk b{color:var(--text)}
+.shake{animation:sh .35s}
+@keyframes sh{20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}
+@media (prefers-reduced-motion:reduce){.shake{animation:none}}
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="c"></canvas>
+  <div id="atr">Answers <span id="an">0</span>/<span id="at">5</span></div>
+  <div id="imm" class="hidden">😇 Immortal</div>
+  <div id="score" class="hidden">0</div>
+  <div id="tip"><div class="ttl">Flappy Owl</div><div>Tap to fly</div></div>
+  <div id="menu" class="ov">
+    <div class="card">
+      <h1>Flappy Owl</h1>
+      <p class="pk">Package: <b id="pkn">Unit 8</b></p>
+      <div class="stack">
+        <button id="pkg" class="b2">Package</button>
+        <button id="play">Play</button>
+      </div>
+    </div>
+  </div>
+  <div id="pkm" class="ov hidden">
+    <div class="card">
+      <h1>Package</h1>
+      <div class="stack" id="pklist"></div>
+      <div class="stack" style="margin-top:12px"><button id="pkb" class="b3">Back</button></div>
+    </div>
+  </div>
+  <div id="over" class="ov hidden">
+    <div class="card">
+      <h1 id="ovt">Game over</h1>
+      <p class="sc">Score <b id="fs">0</b> &nbsp;|&nbsp; Best <b id="fb">0</b></p>
+      <button id="ans">Answer the question</button>
+    </div>
+  </div>
+  <div id="quiz" class="ov top hidden">
+    <div class="card" id="qcard">
+      <div class="cat" id="cat"></div>
+      <div class="q" id="q"></div>
+      <input id="inp" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done" placeholder="Type the missing words">
+      <div class="fb" id="fb2"></div>
+      <button id="chk">Check</button>
+      <button id="rst" class="hidden">Restart</button>
+    </div>
+  </div>
+</div>
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+const cv=$("c"),ctx=cv.getContext("2d"),stage=$("stage"),inp=$("inp"),fb2=$("fb2"),qcard=$("qcard");
+const H=640,GH=84,GY=H-GH,PW=62,SPEED=150,GRAV=1500,JUMP=-440,R=15,TAU=6.2832;
+let imm=false,won=false,pipeN=0,answers=0,done=[],W=360,state="ready",t=0,score=0,best=0,flapT=0,flash=0,gOff=0,lock=0,cur=null,lastQ=-1,deadTimer=0;
+try{best=+localStorage.getItem("flappyOwlBest")||0}catch(e){}
+const bird={x:90,y:300,vy:0,rot:0};
+let pipes=[],clouds=[];
+
+const Q=(c,q,...a)=>({c,q,a});
+const UNIT8=[
+Q('','N____ is at the top of the compass','north'),
+Q('People speaking to each other','They have a c___________.\nI don’t like this c___________.','conversation'),
+Q('','E___ is on the right of the compass','east'),
+Q('','S____ is at the bottom of the compass','south'),
+Q('To pick between different options','I can’t c_____ what do I want to eat.\nC_____ the hand! Left or right?','choose'),
+Q('','W___ is on the left of the compass','west'),
+Q('All people of a country or town','P_________ of Krasnodar is about one million and two hundred thousand people.\nWhat is the p_________ of the USA? I think it’s about 200 million is it right?','population'),
+Q('To do something with other people','Can you j___ the call?\nCome j___ our game!','join'),
+Q('','Africa, Asia, North America are C_________','continents'),
+Q('Many people standing in a long line. You go between people because you don’t want to wait.','Don’t j___ t__ q____! Wait!\nIt is bad to j___ t__ q____','jump the queue'),
+Q('You say it when you understand something','I don’t need to drink Coca-cola. I s__.\nI need to learn English. I s__.','i see','see'),
+Q('You say it when you don’t understand','What __ ___ ____ I can’t go swimming today?\nI don’t need to go school? What __ ___ ____?','what do you mean'),
+Q('A card with a picture on one side and a short message on the other, which you send to someone','I gifted a p_______ to my friend for his birthday.\nI want to make a p_______ myself.','postcard'),
+Q('Something what you need very much','This information is very i________.\nIt is very i________ to do homework','important'),
+Q('','M____ in the USA called dollars','money'),
+Q('Really big smartphone','I love this app! I want it on my t_____.\nDo you have a t_____ like Ipad or something?','tablet'),
+Q('For the whole world','Esperanto is an u_______ language\nLove is an u_______ feeling.','universal'),
+Q('','Russian is my n_____ l_______','native language'),
+Q('To speak language fast and good','I can s____ f_______ two languages: French and English.\nWow! You can s____ Esperanto f_______! Me too!','speak fluently'),
+Q('A message that you write to someone and send to them','To send a l_____.\nI write three l______ to my brother every month.','letter','letters'),
+Q('','B________ person is who can speak two languages','bilingual'),
+Q('','English, German, Italian are f______ l________','foreign languages'),
+Q('You say it when you understand something','Yellow and Blue makes green? I ___ __!\nI need to open settings? I ___ __.','i get it','get it'),
+Q('','I am n_____ s______ of Russian language','native speaker'),
+Q('You say it when you don’t think you know','What is the answer? I think it is C but I’m ___ ____','not sure','im not sure','i am not sure'),
+Q('You ask it to check if a person understands something','You can’t fly without wings. Know ____ _ ____?\nYou don’t need to go there. Know ____ _ ____?','know what i mean','what i mean'),
+Q('You don’t know something exactly','What’s the answer? — I’m not ____.\nAre you coming at school tomorrow? — __ ___ ____.','im not sure','i am not sure'),
+Q('You use it on your phone','So what A__________ do I need to open?\nI don’t have this Twitter A__.','application','app'),
+Q('To speak with someone by phone or internet','I c___ my friend every evening.\nI got a c___ from my teacher yesterday','call'),
+Q('A message that you send to someone using the internet like Gmail or Yandex','I sent an e-____ to my teacher.\nI got an e-____ from my boss','email','e mail'),
+Q('To pick one thing from two or more things','I can’t ______ between chocolate and marmalade.\nIf you can have a cat or a dog, what do you ______ ?','choose'),
+Q('You say this when you don’t understand what someone is saying','I don’t like this music. — What __ ___ mean?\nIt’s difficult. — ____ __ ___ ____? It is easy!','what do you mean'),
+Q('To help people in need','Millionaires should give money to c______\nShe gives money to c______ to help poor children','charity')
+];
+const PACKS=[{name:'Unit 8',qs:UNIT8}];
+let QS=UNIT8,pack=PACKS[0];
+const norm=s=>s.toLowerCase().replace(/[’‘'`]/g,"").replace(/[^a-z\s]/g," ").replace(/\s+/g," ").trim();
+
+function resize(){
+  const cw=stage.clientWidth,ch=stage.clientHeight,d=Math.min(window.devicePixelRatio||1,3),sc=ch/H;
+  W=cw/sc;cv.width=Math.round(cw*d);cv.height=Math.round(ch*d);
+  ctx.setTransform(d*sc,0,0,d*sc,0,0);
+  bird.x=Math.min(100,W*0.3);
+  if(!clouds.length)for(let i=0;i<5;i++)clouds.push({x:Math.random()*W,y:40+Math.random()*260,s:.6+Math.random()*.8,v:8+Math.random()*10});
+}
+window.addEventListener("resize",resize);
+
+function setScore(){$("score").textContent=score}
+function reset(){
+  state="ready";score=0;pipes=[];pipeN=0;won=false;bird.y=300;bird.vy=0;bird.rot=0;flash=0;gOff=0;setScore();
+  $("tip").classList.remove("hidden");$("score").classList.add("hidden");
+}
+const lvl=n=>Math.max(0,Math.min(1,(n-20)/80));
+const gapFor=n=>148-30*lvl(n),spFor=n=>215-25*lvl(n);
+function spawn(x){const gap=gapFor(pipeN+1);pipeN++;pipes.push({x,gap,top:70+Math.random()*(GY-gap-140),passed:false})}
+function flap(){
+  if(performance.now()<lock)return;
+  if(state==="ready"){state="play";$("tip").classList.add("hidden");$("score").classList.remove("hidden")}
+  if(state==="play"){bird.vy=JUMP;flapT=.25}
+}
+function die(){
+  if(state!=="play")return;
+  state="dead";flash=1;bird.vy=-120;
+  deadTimer=setTimeout(showOver,900);
+}
+function showOver(){
+  if(state!=="dead")return;
+  clearTimeout(deadTimer);state="over";$("ovt").textContent=won?"You made it!":"Game over";
+  if(score>best){best=score;try{localStorage.setItem("flappyOwlBest",best)}catch(e){}}
+  $("fs").textContent=score;$("fb").textContent=best;
+  $("score").classList.add("hidden");$("over").classList.remove("hidden");
+}
+function rc(x,y,w,h){
+  const cx=Math.max(x,Math.min(bird.x,x+w)),cy=Math.max(y,Math.min(bird.y,y+h));
+  const dx=bird.x-cx,dy=bird.y-cy;return dx*dx+dy*dy<R*R;
+}
+
+function update(dt){
+  t+=dt;flapT=Math.max(0,flapT-dt);flash=Math.max(0,flash-dt*3);
+  clouds.forEach(c=>{c.x-=c.v*dt;if(c.x<-90*c.s)c.x=W+90*c.s});
+  if(state==="ready"){bird.y=300+Math.sin(t*5)*8;bird.rot=0;gOff+=SPEED*dt;return}
+  if(state==="play"){
+    gOff+=SPEED*dt;
+    pipes.forEach(p=>p.x-=SPEED*dt);
+    pipes=pipes.filter(p=>p.x>-PW-10);
+    const last=pipes[pipes.length-1];
+    if(!last)spawn(W+60);else{const sp=spFor(pipeN+1);if(last.x+sp<=W+10)spawn(last.x+sp)}
+    bird.vy=Math.min(bird.vy+GRAV*dt,720);bird.y+=bird.vy*dt;
+    if(bird.y<R){bird.y=R;bird.vy=0}
+    bird.rot=Math.max(-.45,Math.min(1.3,bird.vy/450));
+    for(const p of pipes){
+      if(!p.passed&&p.x+PW<bird.x){p.passed=true;score++;setScore();if(score>=100){won=true;state="dead";showOver();break}}
+      if(!imm&&(rc(p.x,0,PW,p.top)||rc(p.x,p.top+p.gap,PW,GY))){die();break}
+    }
+    if(state==="play"&&bird.y+R>=GY){bird.y=GY-R;if(imm)bird.vy=0;else die()}
+  }else if(state==="dead"){
+    bird.vy=Math.min(bird.vy+GRAV*dt,900);bird.y+=bird.vy*dt;bird.rot=Math.min(1.4,bird.rot+dt*5);
+    if(bird.y+R>=GY){bird.y=GY-R;showOver()}
+  }
+}
+
+const circ=(x,y,r)=>{ctx.beginPath();ctx.arc(x,y,r,0,TAU);ctx.fill()};
+const ell=(x,y,rx,ry)=>{ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,TAU);ctx.fill()};
+const tri=(a,b,c,d,e,f)=>{ctx.beginPath();ctx.moveTo(a,b);ctx.lineTo(c,d);ctx.lineTo(e,f);ctx.closePath();ctx.fill()};
+
+function prect(x,y,w,h){
+  const g=ctx.createLinearGradient(x,0,x+w,0);
+  g.addColorStop(0,"#6f2f95");g.addColorStop(.35,"#b46fd9");g.addColorStop(1,"#6f2f95");
+  ctx.fillStyle=g;ctx.fillRect(x,y,w,h);
+  ctx.strokeStyle="#3f1d5c";ctx.lineWidth=3;ctx.strokeRect(x,y,w,h);
+}
+function drawPipe(p){
+  const b=p.top+p.gap;
+  prect(p.x+4,-5,PW-8,p.top-26+5);prect(p.x,p.top-26,PW,26);
+  prect(p.x+4,b+26,PW-8,GY-b-26+5);prect(p.x,b,PW,26);
+}
+function drawOwl(){
+  ctx.save();ctx.translate(bird.x,bird.y);ctx.rotate(bird.rot);
+  if(imm){ctx.fillStyle="rgba(255,215,0,.35)";circ(0,0,32);ctx.globalAlpha=.8}
+  const G="#58cc02",D="#46a302",L="#89e219",O="#ff9600";
+  ctx.fillStyle=O;ell(-7,19,6,3.5);ell(7,19,6,3.5);
+  ctx.fillStyle=G;tri(-21,-8,-17,-27,-4,-18);tri(21,-8,17,-27,4,-18);
+  ctx.beginPath();ctx.ellipse(0,0,23,21,0,0,TAU);ctx.fillStyle=G;ctx.fill();ctx.strokeStyle=D;ctx.lineWidth=2;ctx.stroke();
+  ctx.fillStyle=L;ell(0,9,14,10);
+  ctx.fillStyle="#fff";circ(-9,-6,9.5);circ(9,-6,9.5);
+  ctx.fillStyle="#1f2937";circ(-5.5,-5,4.6);circ(12.5,-5,4.6);
+  ctx.fillStyle="#fff";circ(-4.5,-6.6,1.6);circ(13.5,-6.6,1.6);
+  ctx.fillStyle=O;tri(-3,1,9,1,3,10);
+  ctx.save();ctx.translate(-14,4);ctx.rotate(-.4+1.4*(flapT/.25));ctx.fillStyle=D;ell(-6,0,11,6.5);ctx.restore();
+  ctx.restore();
+}
+function draw(){
+  const g=ctx.createLinearGradient(0,0,0,GY);g.addColorStop(0,"#4fc3f7");g.addColorStop(1,"#b9e8fb");
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  ctx.fillStyle="rgba(255,255,255,.85)";
+  clouds.forEach(c=>{const s=c.s;circ(c.x,c.y,18*s);circ(c.x+22*s,c.y-9*s,24*s);circ(c.x+48*s,c.y,18*s);ctx.fillRect(c.x,c.y,48*s,18*s)});
+  pipes.forEach(drawPipe);
+  ctx.fillStyle="#ded895";ctx.fillRect(0,GY,W,GH);
+  ctx.fillStyle="#73bf2e";ctx.fillRect(0,GY,W,16);
+  ctx.fillStyle="#8fd14f";const o=gOff%32;
+  for(let x=-o;x<W;x+=32){ctx.beginPath();ctx.moveTo(x,GY);ctx.lineTo(x+16,GY);ctx.lineTo(x+8,GY+16);ctx.lineTo(x-8,GY+16);ctx.fill()}
+  ctx.fillStyle="#548a1f";ctx.fillRect(0,GY+16,W,3);
+  drawOwl();
+  if(flash>0){ctx.fillStyle="rgba(255,255,255,"+(flash*.7)+")";ctx.fillRect(0,0,W,H)}
+}
+
+let prev=performance.now();
+function loop(n){const dt=Math.min((n-prev)/1000,.04);prev=n;update(dt);draw();requestAnimationFrame(loop)}
+
+cv.addEventListener("pointerdown",e=>{e.preventDefault();flap()});
+document.addEventListener("keydown",e=>{
+  if(e.target===inp)return;
+  if(e.code==="Space"||e.code==="ArrowUp"){e.preventDefault();flap()}
+});
+
+function pickQ(){
+  const left=QS.filter(q=>!done.includes(q));
+  return left[Math.floor(Math.random()*left.length)];
+}
+$("ans").addEventListener("click",()=>{
+  cur=pickQ();
+  $("cat").textContent=cur.c;$("q").textContent=cur.q;
+  inp.value="";inp.disabled=false;fb2.textContent="";fb2.className="fb";
+  $("chk").classList.remove("hidden");$("rst").classList.add("hidden");
+  $("over").classList.add("hidden");$("quiz").classList.remove("hidden");
+  inp.focus();
+});
+function check(){
+  if(!$("rst").classList.contains("hidden"))return;
+  const v=norm(inp.value);if(!v)return;
+  if(v==="aezakmi"){
+    imm=!imm;$("imm").classList.toggle("hidden",!imm);
+    fb2.textContent=imm?"Immortality on 😇":"Immortality off";fb2.className="fb ok";inp.value="";return;
+  }
+  if(cur.a.includes(v)){
+    done.push(cur);answers=done.length;$("an").textContent=answers;
+    const all=answers>=QS.length;
+    fb2.textContent=all?"Congratulations! 🎉":"Correct! 🎉";fb2.className="fb ok";
+    $("rst").textContent=all?"Again?":"Restart";
+    inp.blur();inp.disabled=true;
+    $("chk").classList.add("hidden");$("rst").classList.remove("hidden");
+  }else{
+    fb2.textContent="Not quite. Try again!";fb2.className="fb bad";
+    qcard.classList.remove("shake");void qcard.offsetWidth;qcard.classList.add("shake");
+    inp.select();
+  }
+}
+$("chk").addEventListener("click",check);
+inp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();check()}});
+$("rst").addEventListener("click",()=>{
+  if(answers>=QS.length){done=[];answers=0;$("an").textContent=0}
+  $("quiz").classList.add("hidden");lock=performance.now()+300;reset();
+});
+
+$("at").textContent=QS.length;
+resize();reset();$("fb").textContent=best;
+$("tip").classList.add("hidden");
+function setPack(p){pack=p;QS=p.qs;done=[];answers=0;$("an").textContent=0;$("at").textContent=QS.length;$("pkn").textContent=p.name}
+function renderPacks(){
+  const box=$("pklist");box.textContent="";
+  PACKS.forEach(p=>{
+    const b=document.createElement("button");
+    b.className="b3"+(p===pack?" sel":"");
+    b.textContent=(p===pack?"✓ ":"")+p.name;
+    b.addEventListener("click",()=>{setPack(p);$("pkm").classList.add("hidden");$("menu").classList.remove("hidden")});
+    box.appendChild(b);
+  });
+}
+$("pkg").addEventListener("click",()=>{renderPacks();$("menu").classList.add("hidden");$("pkm").classList.remove("hidden")});
+$("pkb").addEventListener("click",()=>{$("pkm").classList.add("hidden");$("menu").classList.remove("hidden")});
+$("play").addEventListener("click",()=>{$("menu").classList.add("hidden");$("tip").classList.remove("hidden");lock=performance.now()+300});
+setPack(PACKS[0]);
+requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
