@@ -3,6 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Flappy Owl">
 <title>Flappy Owl</title>
 <style>
 :root{--card:#fff;--text:#2b2b2b;--muted:#6b7280;--line:#e2e5e9;color-scheme:light;
@@ -136,8 +138,8 @@ Q('To pick one thing from two or more things','I can’t ______ between chocolat
 Q('You say this when you don’t understand what someone is saying','I don’t like this music. — What __ ___ mean?\nIt’s difficult. — ____ __ ___ ____? It is easy!','what do you mean'),
 Q('To help people in need','Millionaires should give money to c______\nShe gives money to c______ to help poor children','charity')
 ];
-const PACKS=[{name:'Unit 8',qs:UNIT8}];
-let QS=UNIT8,pack=PACKS[0];
+const PACKS=[1,2,3].map(i=>({name:'Unit 8 - '+i,qs:UNIT8.slice((i-1)*11,i*11)}));
+let QS=PACKS[0].qs,pack=PACKS[0];
 const norm=s=>s.toLowerCase().replace(/[’‘'`]/g,"").replace(/[^a-z\s]/g," ").replace(/\s+/g," ").trim();
 
 function resize(){
